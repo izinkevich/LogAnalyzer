@@ -9,8 +9,21 @@ import com.power.constants.IntrusionConstants;
 
 public class App {
 	
+	private Timer timer;
+	
 	public App(File logfile, PrintStream out) {
-		new Timer().schedule(new RepeatTask(logfile, out), 0, IntrusionConstants.DELAY_BETWEEN_FILE_READS_MILLIS);
+		timer = new Timer();
+		timer.schedule(new RepeatTask(logfile, out), 0, IntrusionConstants.DELAY_BETWEEN_FILE_READS_MILLIS);
+	}
+	
+	private void cancelTimer() {
+		timer.cancel();
+	}
+	
+	@Override
+	public void finalize() throws Throwable {
+		cancelTimer();
+		super.finalize();
 	}
 
 	public static void main(String[] args) throws FileNotFoundException {

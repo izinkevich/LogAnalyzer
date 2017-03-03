@@ -3,6 +3,8 @@ package com.power;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
 
@@ -12,11 +14,6 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 import com.power.constants.IntrusionConstants;
 
-/*  Shall be run as Java Application
- *  and stopped manually
- *  from the IDE
- */
-
 public class AppITrunner {
 
 	private final static int FAILURES_INIT_COUNT = 10;
@@ -24,7 +21,7 @@ public class AppITrunner {
 	private static String logSuccessEntry = "30.212.127.12,1462472000,SUCCESS,Peter.Rascal\n";
 	private static String logErrEntry2 = "30.212.19.124,1462472777,FAILURE,Thomas.Davenport\n";
 
-	public static void main(String[] args) throws IOException, URISyntaxException {
+	public static void main(String[] args) throws IOException, URISyntaxException, NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 
 		URL logURL = AppITrunner.class.getClassLoader().getResource("log.txt");
 		File logFile = new File(logURL.toURI());
@@ -40,7 +37,7 @@ public class AppITrunner {
 		Files.write("", outputFile, Charsets.UTF_8);
 		Files.copy(logFile, logTempFile);
 
-		new App(logTempFile, new PrintStream(outputFile));
+		App app = new App(logTempFile, new PrintStream(outputFile));
 
 		waitFor(IntrusionConstants.DELAY_BETWEEN_FILE_READS_MILLIS / 2);
 		Assert.assertEquals(FAILURES_INIT_COUNT - IntrusionConstants.MAX_NUM_OF_ENTRIES_STORED + 1, Files.readLines(outputFile, Charsets.UTF_8).size());
@@ -63,7 +60,12 @@ public class AppITrunner {
 		System.out.println("Check  - only one new alarm message is expected in output");
 		Assert.assertEquals(FAILURES_INIT_COUNT - IntrusionConstants.MAX_NUM_OF_ENTRIES_STORED + 1 + 3, Files.readLines(outputFile, Charsets.UTF_8).size());
 
-		System.out.println("Integration test PASSED, stop the application");
+		Method method = app.getClass().getDeclaredMethod("cancelTimer");
+		method.setAccessible(true);
+		method.invoke(app);
+		
+		System.out.println("Integration test PASSED");
+
 	}
 
 	private static void waitFor(long millis) {
